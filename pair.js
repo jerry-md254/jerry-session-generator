@@ -134,16 +134,16 @@ END:VCARD`
 
 // ---- Caption (alive.js style bot details) ----
 const caption = `
-╭━〔 *ᴊᴇʀʀʏ-xᴍᴅ* 〕━··♛
-┃⬣ ╭──────────────
-┃⬣ │ 👑 Owner : *ᴊᴇʀʀʏ ᴋɪɴɢ*
-┃⬣ │ 🤖 Baileys : *Multi Device*
-┃⬣ │ 💻 Type : *NodeJs*
-┃⬣ │ 🚀 Platform : *Render*
-┃⬣ │ ⚙️ Mode : *Public*
-┃⬣ │ 🔣 Prefix : *[ . ]*
-┃⬣ │ 🏷️ Version : *10.0*
-┃⬣ ╰──────────────
+╭━〔 *ᴊᴇʀʀʏ-xᴍᴅ* 〕━··๏
+┃▶ ╭──────────────
+┃▶ │ 👑 Owner : *JERRY KING*
+┃▶ │ 🤖 Baileys : *Multi Device*
+┃▶ │ 💻 Type : *NodeJs*
+┃▶ │ 🚀 Platform : *Render*
+┃▶ │ ⚙️ Mode : *Public*
+┃▶ │ 🔣 Prefix : *[ . ]*
+┃▶ │ 🏷️ Version : *8.0.0*
+┃▶ ╰──────────────
 ╰━━━━━━━━━━━━━━┈⊷`;
 
 // ---- Send IMAGE + caption, quoted with fake vCard ----
