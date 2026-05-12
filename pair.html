@@ -484,9 +484,11 @@
 
       function copyCode() {
         const codeDisplay = document.getElementById("codeDisplay");
-        const text = codeDisplay.innerText;
+        const text = codeDisplay.innerText.trim();
         if (text && text !== "Your pair code will appear here") {
-          navigator.clipboard.writeText(text).then(() => {
+          // Sirf actual code copy ho, "CODE: " prefix nahi
+          const cleanCode = text.replace(/^.*CODE:\s*/i, "").trim();
+          navigator.clipboard.writeText(cleanCode).then(() => {
             const copyBtn = document.getElementById("copy");
             copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
             copyBtn.style.color = '#48bb78';
