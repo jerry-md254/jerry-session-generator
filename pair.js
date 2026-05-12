@@ -19,32 +19,18 @@ const __dirname = dirname(__filename);
 
 const router = express.Router();
 
-/* ===== SHORT SESSION ID GENERATOR WITH BASE64 ENCODING ===== */
 async function generateShortSession(credsPath) {
     try {
-        // Read the actual creds.json file
         const credsData = fs.readFileSync(credsPath, 'utf-8');
-        
-        // Encode the credentials to base64
         const base64Creds = Buffer.from(credsData).toString('base64');
-        
-        // Generate session ID with prefix
-        const y = new Date().getFullYear();
-        const r = Math.random().toString(36).substring(2, 6).toUpperCase();
         const sessionId = `JERY-MD~`;
-        
-        // Return both session ID and encoded data
-        return {
-            sessionId: sessionId,
-            encodedData: base64Creds
-        };
+        return { sessionId, encodedData: base64Creds };
     } catch (error) {
         console.error("Error generating short session:", error);
         return null;
     }
 }
 
-/* ===== HELPERS ===== */
 function rm(p) {
     try { 
         if (fs.existsSync(p)) fs.rmSync(p, { recursive: true, force: true }); 
@@ -53,7 +39,6 @@ function rm(p) {
     }
 }
 
-/* ===== ROUTE ===== */
 router.get("/", async (req, res) => {
     let num = (req.query.number || "").replace(/[^0-9]/g, "");
     if (!num) return res.status(400).send({ code: "Number required" });
@@ -86,115 +71,79 @@ router.get("/", async (req, res) => {
         sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
             if (connection === "open") {
                 try {
-                    // Wait for creds to be saved
                     await delay(3000);
-                    
-                    // Path to creds.json
                     const credsPath = join(dir, 'creds.json');
-                    
-                    // Generate short session with encoded data
                     const sessionInfo = await generateShortSession(credsPath);
                     
-                    if (!sessionInfo) {
-                        throw new Error("Failed to generate session");
-                    }
+                    if (!sessionInfo) throw new Error("Failed to generate session");
 
                     const jid = jidNormalizedUser(num + "@s.whatsapp.net");
-
-                    // 1️⃣ Send the COMPLETE session string (SESSION_ID + base64 data)
                     const completeSession = `${sessionInfo.sessionId}${sessionInfo.encodedData}`;
-                    await sock.sendMessage(jid, { 
-                        text: `${completeSession}` 
-                    });
-
-                    // 2️⃣ Wait 2 seconds
+                    
+                    await sock.sendMessage(jid, { text: completeSession });
                     await delay(2000);
 
-                  // 3️⃣ Send bot info (ALIVE STYLE: Fake vCard + Image + Caption)
+                    const fakeVCardQuoted = {
+                        key: { fromMe: false, participant: "0@s.whatsapp.net", remoteJid: "status@broadcast" },
+                        message: {
+                            contactMessage: {
+                                displayName: "© JERRY-MD",
+                                vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:© JERRY-MD\nORG:JERRY XD;\nTEL;type=CELL;type=VOICE;waid=13135550002:+13135550002\nEND:VCARD`
+                            }
+                        }
+                    };
 
-// ---- Fake vCard (quoted, upar show hoga) ----
-const fakeVCardQuoted = {
-  key: {
-    fromMe: false,
-    participant: "0@s.whatsapp.net",
-    remoteJid: "status@broadcast"
-  },
-  message: {
-    contactMessage: {
-      displayName: "© JERRY-MD",
-      vcard: `BEGIN:VCARD
-VERSION:3.0
-FN:© JERRY-MD
-ORG:JERRY XD;
-TEL;type=CELL;type=VOICE;waid=13135550002:+13135550002
-END:VCARD`
-    }
-  }
-};
-
-// ---- Caption (alive.js style bot details) ----
-const caption = `
+                    const caption = `
 ╭━〔 *ᴊᴇʀʀʏ-xᴍᴅ* 〕━··๏
 ┃▶ ╭──────────────
 ┃▶ │ 👑 Owner : *JERRY KING*
 ┃▶ │ 🤖 Baileys : *Multi Device*
 ┃▶ │ 💻 Type : *NodeJs*
-┃▶ │ 🚀 Platform : *Render*
+┃▶ │ 🚀 Platform : *Railway*
 ┃▶ │ ⚙️ Mode : *Public*
 ┃▶ │ 🔣 Prefix : *[ . ]*
 ┃▶ │ 🏷️ Version : *8.0.0*
 ┃▶ ╰──────────────
 ╰━━━━━━━━━━━━━━┈⊷`;
 
-// ---- Send IMAGE + caption, quoted with fake vCard ----
-await sock.sendMessage(
-  jid,
-  {
-    image: { url: "https://files.catbox.moe/v6u3rr.jpg" },
-    caption,
-    contextInfo: {
-      mentionedJid: [jid],
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: "120363406741941705@newsletter",
-        newsletterName: "✧༒★[ᴊᴇʀʀʏ-ᴍᴅ]★༒✧",
-        serverMessageId: 143
-      }
-    }
-  },
-  { quoted: fakeVCardQuoted }
-);
-                    // 4️⃣ Cleanup
+                    await sock.sendMessage(
+                        jid,
+                        {
+                            image: { url: "https://files.catbox.moe/v6u3rr.jpg" },
+                            caption,
+                            contextInfo: {
+                                mentionedJid: [jid],
+                                forwardingScore: 999,
+                                isForwarded: true,
+                                forwardedNewsletterMessageInfo: {
+                                    newsletterJid: "120363406741941705@newsletter",
+                                    newsletterName: "✧༒★[ᴊᴇʀʀʏ-ᴍᴅ]★༒✧",
+                                    serverMessageId: 143
+                                }
+                            }
+                        },
+                        { quoted: fakeVCardQuoted }
+                    );
+
                     await delay(2000);
+                    // ✅ FIX: sock.end() instead of process.exit()
+                    try { sock.end(); } catch(e) {}
                     rm(dir);
-                    
-                    // Exit gracefully
-                    setTimeout(() => {
-                        process.exit(0);
-                    }, 1000);
-                    
+                    console.log(`✅ Pair done for ${num} — server still running.`);
+
                 } catch (err) {
-                    console.error("❌ Error in pairing process:", err);
+                    console.error("❌ Pairing process error:", err);
+                    try { sock.end(); } catch(e) {}
                     rm(dir);
-                    
-                    // Try to send error to user
-                    try {
-                        const jid = jidNormalizedUser(num + "@s.whatsapp.net");
-                        await sock.sendMessage(jid, { 
-                            text: "❌ Error generating session. Please try again." 
-                        });
-                    } catch(e) {}
-                    
-                    process.exit(1);
                 }
             }
 
             if (connection === "close") {
                 const c = lastDisconnect?.error?.output?.statusCode;
-                if (c !== 401) {
-                    setTimeout(() => start(), 2000);
+                if (c === 401) {
+                    rm(dir);
                 }
+                // ✅ FIX: No restart loop — each HTTP request is independent
             }
         });
 
@@ -204,22 +153,15 @@ await sock.sendMessage(
                 let code = await sock.requestPairingCode(num);
                 code = code?.match(/.{1,4}/g)?.join("-") || code;
                 if (!res.headersSent) {
-                    res.send({ 
-                        success: true, 
-                        code: code,
-                        message: "Scan QR code or use pairing code to connect" 
-                    });
+                    res.send({ success: true, code: code, message: "Pairing code generated" });
                 }
             } catch(err) {
-                console.error("Pairing error:", err);
+                console.error("Pairing code error:", err);
                 if (!res.headersSent) {
-                    res.status(503).send({ 
-                        code: "PAIR_FAIL", 
-                        error: err.message 
-                    });
+                    res.status(503).send({ code: "PAIR_FAIL", error: err.message });
                 }
+                try { sock.end(); } catch(e) {}
                 rm(dir);
-                process.exit(1);
             }
         }
     }
@@ -227,17 +169,4 @@ await sock.sendMessage(
     start();
 });
 
-/* ===== SAFETY ===== */
-process.on("uncaughtException", (err) => {
-    const e = String(err);
-    if (e.includes("conflict") || e.includes("not-authorized") || e.includes("Timed Out")) return;
-    console.error("Crash:", err);
-});
-
-process.on("unhandledRejection", (err) => {
-    console.error("Unhandled Rejection:", err);
-});
-
 export default router;
-
-
